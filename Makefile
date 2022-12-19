@@ -5,3 +5,6 @@ run-db:
 
 db-bash:
 	docker container exec -it db-seeding bash
+
+create-migrations:
+	docker run -v $(pwd)/db/schema:/migrations migrate/migrate create -ext sql -dir /migrations -seq schema_int
