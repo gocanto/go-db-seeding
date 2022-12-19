@@ -1,39 +1,33 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
+	localDB "github.com/gocanto/go-db-seeding/db"
+	"github.com/gocanto/go-db-seeding/db/factory"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 )
 
 func main() {
-	db, err := sql.Open("postgres", "postgres://postgres:pwd@localhost:5432/gus-db?sslmode=disable")
+	db, err := localDB.GetDbConnection()
 
 	if err != nil {
 		panic(err)
 	}
 
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	user := factory.CreateFakeUser()
+
+	lastInsertId := 0
+
+	err = db.QueryRow(
+		"INSERT INTO users (username, handle) VALUES ($1, $2) RETURNING id;",
+		user.Username,
+		user.Handle,
+	).Scan(&lastInsertId)
 
 	if err != nil {
 		panic(err)
 	}
 
-	// NOTE: relative path to folder
-	m, err := migrate.NewWithDatabaseInstance(
-		"file://./db/schema",
-		"postgres", driver)
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = m.Up()
-
-	if err != nil {
-		fmt.Println(err)
-	}
+	fmt.Println(lastInsertId)
 }
